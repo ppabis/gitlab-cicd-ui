@@ -16,3 +16,6 @@ def get_branches():
     branches += response.json()
     iterations += 1
   return branches
+
+branches = len(get_branches())
+print(f"Total branches fetched: {branches}")
