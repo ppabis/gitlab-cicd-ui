@@ -7,4 +7,12 @@ def get_branches():
   url = f"{API_URL}/projects/{PROJECT_ID}/repository/branches"
   headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
   response = requests.get(url, headers=headers)
-  return response.json()
+
+  branches = response.json()
+  iterations = 0
+  # Loop at most 10 times
+  while "next" in response.links and iterations < 10:
+    response = requests.get(response.links["next"]["url"], headers=headers)
+    branches += response.json()
+    iterations += 1
+  return branches
