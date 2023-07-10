@@ -17,5 +17,7 @@ def get_branches():
     iterations += 1
   return branches
 
-branches = len(get_branches())
-print(f"Total branches fetched: {branches}")
+def get_pipelines():
+    url = f"{API_URL}/projects/{PROJECT_ID}/pipelines?per_page=50"
+    headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
+    return requests.get(url, headers=headers).json()
