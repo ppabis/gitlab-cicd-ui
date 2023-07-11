@@ -6,6 +6,7 @@ import json
 PROJECT_ID = 47513328 # Bring your own project ID
 API_URL = "https://gitlab.com/api/v4/" # For self-hosted, change this
 GITLAB_TOKEN = os.environ["GITLAB_TOKEN"] # Will fail if not set
+TRIGGER_TOKEN = os.environ["TRIGGER_TOKEN"] # Will fail if not set
 
 def get_branches():
   url = f"{API_URL}/projects/{PROJECT_ID}/repository/branches"
@@ -28,14 +29,15 @@ def get_pipelines():
 
 def trigger_pipeline(branch, build_type):
     url = f"{API_URL}/projects/{PROJECT_ID}/trigger/pipeline"
-    headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
-    body = {
-        "ref": branch,
-        "variables": [
-            { "key": 'BUILD_TYPE', "value": build_type }
-        ]
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
     }
-    response = requests.post(url, headers=headers, json=body)
+    body = {
+        "token": TRIGGER_TOKEN,
+        "ref": branch,
+        "variables[BUILD_TYPE]": build_type
+    }
+    response = requests.post(url, headers=headers, data=body)
     return (response.status_code, response.json())
 
 INDEX_HTML = """
@@ -47,23 +49,25 @@ INDEX_HTML = """
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
 </head>
 <body>
-  <h2>Run Pipeline</h2>
-  <form action="/" method="POST">
-    Branch: <select name="branch">
-      {}
-    </select>
-    <br>
-    Build type:<select name="build_type">
-      <option value="debug">Debug</option>
-      <option value="release">Release</option>
-    </select>
-    <br>
-    <input type="submit" value="Submit">
-  </form>
-  <h2>Recent pipelines</h2>
-  <table>
-    {}
-  </table>
+    <div class="container">
+    <h2>Run Pipeline</h2>
+    <form action="/" method="POST">
+        Branch: <select name="branch">
+        {}
+        </select>
+        <br>
+        Build type:<select name="build_type">
+        <option value="debug">Debug</option>
+        <option value="release">Release</option>
+        </select>
+        <br>
+        <input type="submit" value="Submit">
+    </form>
+    <h2>Recent pipelines</h2>
+    <table>
+        {}
+    </table>
+</div>
 </body>
 </html>
 """
@@ -86,7 +90,6 @@ class GitLabHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(format_index().encode("utf-8"))
-        self.wfile.close()
 
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
@@ -107,7 +110,6 @@ class GitLabHandler(BaseHTTPRequestHandler):
             self.send_header("Location", "/")
             self.end_headers()
             self.wfile.write("Redirecting".encode("utf-8"))
-        self.wfile.close()
 
 def main():
     server_address = ("", 8000)
