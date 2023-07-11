@@ -1,7 +1,7 @@
 Sample GitLab CI/CD triggering UI
 ------------
 Companion repository to a blog post available at:
-...
+https://pabis.eu/blog/2023-07-11-Create-Run-Pipelines-GitLab-API.html
 
 ```bash
 $ docker build -t gitlab-ci-cd-ui:latest .
